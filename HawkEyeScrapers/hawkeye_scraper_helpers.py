@@ -19,14 +19,20 @@ def get_url_hawkeye(match_id):
     try:
         url = f'https://cricketapi-icc.pulselive.com//fixtures/{match_id}/uds/stats'
     except:
-        url = f'https://cricketapi.platform.bcci.tv//fixtures/{match_id}/uds/stats'
+        try:
+            url = f'https://cricketapi.platform.bcci.tv//fixtures/{match_id}/uds/stats'
+        except:
+            url = f'https://cricketapi.platform.iplt20.com//fixtures/{match_id}/uds/stats'
     return url
 
 def get_url_metadata(match_id):
     try:
         url = f'https://cricketapi-icc.pulselive.com//fixtures/{match_id}/scoring'
     except:
-        url = f'https://cricketapi.platform.bcci.tv//fixtures/{match_id}/scoring'
+        try:
+            url = f'https://cricketapi.platform.bcci.tv//fixtures/{match_id}/scoring'
+        except:
+			url = f'https://cricketapi.platform.iplt20.com//fixtures/{match_id}/scoring'			
     return url
 
 def get_soup_from_url(url):
