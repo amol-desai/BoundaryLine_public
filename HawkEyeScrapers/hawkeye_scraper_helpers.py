@@ -63,8 +63,8 @@ def get_tracking_df_from_matchid(match_id):
     else:
       df['over'] = df.over.apply(lambda x: str(x).split('.'))
       df['match_inn'] = df.over.apply(lambda x: x[0])
-      df['over_ball'] = pd.to_numeric(df.over.apply(lambda x: x[1]), errors='coerce')
-      df['over_num'] = pd.to_numeric(df.over.apply(lambda x: x[2]), errors='coerce')
+      df['over_ball'] = pd.to_numeric(df.over.apply(lambda x: x[2]), errors='coerce')
+      df['over_num'] = pd.to_numeric(df.over.apply(lambda x: x[1]), errors='coerce')
       df.drop('over', axis=1, inplace=True)
 
       df['speed'] = pd.to_numeric(df['speed'], errors='coerce')*3.6
