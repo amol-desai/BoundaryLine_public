@@ -186,5 +186,9 @@ def get_ball_by_ball_from_match_id(match_id, include_commentary=True):
     return df
 
 
-match_id = 857713
-get_ball_by_ball_from_match_id(match_id)
+def umpires_from_match_id(match_id):
+    espn_soup = helpers.get_soup_from_url(
+        f"https://www.espncricinfo.com/matches/engine/match/{match_id}.html")
+    umpire_data = espn_soup.find(
+        "td", string=re.compile("Umpires")).nextSibling.find_all("h5")
+    return [i.text for i in umpire_data]
