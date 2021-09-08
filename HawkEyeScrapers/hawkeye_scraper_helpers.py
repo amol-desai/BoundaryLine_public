@@ -51,7 +51,7 @@ def get_soup_from_url(url):
     if str(soup):
         return str(soup)
     else:
-        raise ValueError("url is empty")
+        raise ValueError("url is empty, no hawkeye data available")
 
 
 def get_tracking_df_from_matchid(match_id):
