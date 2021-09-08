@@ -35,7 +35,7 @@ def get_ball_by_ball_from_match_id(match_id, include_commentary=True):
     for i in range(2, page_count+1):
         try:
             rest_of_full_commentary.append(
-                json.loads(str(get_soup_from_url(url_template.format(
+                json.loads(str(helpers.get_soup_from_url(url_template.format(
                     series_id=str(series_id),
                     match_id=str(match_id),
                     page_num=str(i)
