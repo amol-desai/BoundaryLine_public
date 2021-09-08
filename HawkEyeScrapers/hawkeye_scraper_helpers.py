@@ -47,7 +47,11 @@ def get_soup_from_url(url):
 
     # soup = BeautifulSoup(html,"lxml")
     soup = BeautifulSoup(html, "html.parser")
-    return str(soup)
+    # check if soup is empty
+    if not str(soup):
+        return str(soup)
+    else:
+        raise ValueError("url is empty")
 
 
 def get_tracking_df_from_matchid(match_id):
@@ -140,3 +144,6 @@ def get_metadata_df_from_matchid(match_id):
     return {'match_metadata': match_df,
             'player_metadata': player_df,
             'venue_metadata': venue_df}
+
+
+def try_for_hawkeye_data(match_id):
