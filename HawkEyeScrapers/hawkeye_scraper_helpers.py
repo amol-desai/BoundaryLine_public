@@ -16,28 +16,74 @@ import json
 import re
 
 
-def get_url_hawkeye(match_id):
-    try:
-        url = f'https://cricketapi-icc.pulselive.com//fixtures/{match_id}/uds/stats'
-    except:
+def get_candidate_base_urls():
+   return [
+       'https://cricketapi-icc.pulselive.coms',
+       'https://cricketapi.platform.bcci.tv',
+       'https://cricketapi.platform.iplt20.com'
+   ]
+
+
+def get_candidate_urls_hawkeye(match_id):
+    url_suffix = f'//fixtures/{match_id}/uds/stats'
+    return [base_url + url_suffix for base_url in get_candidate_base_urls()]
+
+
+def get_candidate_urls_metadata():
+    url_suffix = f'//fixtures/{match_id}/scoring'
+    return [base_url + url_suffix for base_url in get_candidate_base_urls()]
+
+
+def get_available_match_id_list(match_id):
+    candidate_base_urls = get_candidate_base_urls()
+    url_suffix = f'/fixtures?matchStates=C'
+    
+    soup = try_urls(candidate_base_urls)
+    
+    if soup == -1:
+        return soup
+    else:
+        soup = json.loads(soup)
+        num_pages = soup['pageInfo']['numPages']
+        page_size = soup['pageInfo']['pageSize']
+        total_matches = soup['pageInfo']['numEntries']
+
+        def get_matchids_from_page(page_soup):
+            match_id_list = []
+            page_content = page_soup['content']
+            for i in page_content:
+                match_id_list.append(i['scheduleEntry']['matchId']['id'])
+            return match_id_list
+        
+        match_id_list = get_matchids_from_page(soup)
+        
+        for i in range(1, num_pages - 1):
+            soup = try_urls([base_url + f'/fixtures?matchStates=C&page={i}'])
+                if soup not in [-1, -2]:
+                    break
+                else:
+                    pass
+            except:
+                pass
+            match_id_list = match_id_list + get_matchids_from_page(soup)
+     return match_id_list
+
+
+def try_urls(urls):
+    for url in urls:
         try:
-            url = f'https://cricketapi.platform.bcci.tv//fixtures/{match_id}/uds/stats'
+            soup = get_soup_from_url(url)
+            if soup not in [-1, -2]:
+                return soup
+            else:
+                pass
         except:
-            url = f'https://cricketapi.platform.iplt20.com//fixtures/{match_id}/uds/stats'
-    return url
+            pass
+    if soup in [-1, -2]:
+        print("Tried all URLs in vain")
+        return -1
 
-
-def get_url_metadata(match_id):
-    try:
-        url = f'https://cricketapi-icc.pulselive.com//fixtures/{match_id}/scoring'
-    except:
-        try:
-            url = f'https://cricketapi.platform.bcci.tv//fixtures/{match_id}/scoring'
-        except:
-            url = f'https://cricketapi.platform.iplt20.com//fixtures/{match_id}/scoring'
-    return url
-
-
+        
 def get_soup_from_url(url):
     try:
         html = urlopen(url).read()
@@ -51,13 +97,14 @@ def get_soup_from_url(url):
     if str(soup):
         return str(soup)
     else:
-        raise ValueError("url is empty, no hawkeye data available")
+        print("url is empty, no data available")
+        return -2
 
-
+    
 def get_tracking_df_from_matchid(match_id):
     try:
         df = pd.DataFrame(
-            [[k]+v.split(',') for i in json.loads(get_soup_from_url(get_url_hawkeye(match_id)))['data']
+            [[k]+v.split(',') for i in json.loads(try_urls(get_candidate_urls_hawkeye(match_id)))['data']
              for k, v in i.items()],
             columns=['over', 'ball_num', 'batter', 'non-striker',
                      'bowler', 'speed', 'catcher', 'dismissal_desc',
@@ -96,12 +143,12 @@ def get_tracking_df_from_matchid(match_id):
             return df
     except:
         print(
-            f"couldn't retrieve data for match {match_id}. Please check {get_url_hawkeye(match_id)} to debug")
+            f"couldn't retrieve data for match {match_id}. Please check {get_candidate_urls_hawkeye(match_id)} to debug")
         return
 
 
 def get_metadata_df_from_matchid(match_id):
-    m = json.loads(get_soup_from_url(get_url_metadata(match_id)))
+    m = json.loads(try_urls(get_candidate_urls_metadata(match_id)))
     this_match = pd.DataFrame([{k: v for k, v in m['matchInfo'].items() if k in [
         'matchDate', 'matchEndDate', 'isLimitedOvers', 'description', 'matchType', 'tournamentLabel']}])
     this_match['match_id'] = match_id
