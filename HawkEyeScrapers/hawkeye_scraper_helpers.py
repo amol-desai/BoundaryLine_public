@@ -1,6 +1,6 @@
 __author__ = "Amol Desai"
 __copyright__ = "Copyright 2021, BoundaryLine"
-__credits__ = ["Amol Desai"]
+__credits__ = ["Amol Desai", "James Delaney"]
 __license__ = "MPL 2.0"
 __version__ = "0.1.0"
 __maintainer__ = "Amol Desai"
