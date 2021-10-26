@@ -191,7 +191,3 @@ def get_metadata_df_from_matchid(match_id):
     return {'match_metadata': match_df,
             'player_metadata': player_df,
             'venue_metadata': venue_df}
-
-
-def try_for_hawkeye_data(match_id):
-    return 0
