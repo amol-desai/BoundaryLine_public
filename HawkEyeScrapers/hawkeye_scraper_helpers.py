@@ -17,11 +17,11 @@ import re
 
 
 def get_candidate_base_urls():
-   return [
+    return [
        'https://cricketapi-icc.pulselive.coms',
        'https://cricketapi.platform.bcci.tv',
        'https://cricketapi.platform.iplt20.com'
-   ]
+    ]
 
 
 def get_candidate_urls_hawkeye(match_id):
@@ -59,14 +59,12 @@ def get_available_match_id_list(match_id):
         
         for i in range(1, num_pages - 1):
             soup = try_urls([base_url + f'/fixtures?matchStates=C&page={i}'])
-                if soup not in [-1, -2]:
-                    break
-                else:
-                    pass
-            except:
+            if soup not in [-1, -2]:
+                break
+            else:
                 pass
             match_id_list = match_id_list + get_matchids_from_page(soup)
-     return match_id_list
+    return match_id_list
 
 
 def try_urls(urls):
