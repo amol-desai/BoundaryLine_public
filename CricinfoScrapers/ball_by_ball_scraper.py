@@ -14,12 +14,10 @@ import json
 import helpers
 
 
-def get_ball_by_ball_from_match_id(match_id, include_commentary=True):
+def get_ball_by_ball_from_match_id(match_id, series_id='1', include_commentary=True):
     # Scrape ball by ball data from Cricinfo commentary for the match
     # Includes commentary text. This can be disabled to reduce data size
-
-    series_id = helpers.get_series_id_from_match_page(
-        helpers.get_match_url_from_match_id(match_id))
+    # actual series_id is optional and "1" works as of 2019-06-02
 
     url_template = "http://site.web.api.espn.com/apis/site/v2/sports/cricket/{series_id}/playbyplay?event={match_id}&page={page_num}"
 
