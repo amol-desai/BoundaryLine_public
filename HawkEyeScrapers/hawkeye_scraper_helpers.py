@@ -29,16 +29,16 @@ def get_candidate_urls_hawkeye(match_id):
     return [base_url + url_suffix for base_url in get_candidate_base_urls()]
 
 
-def get_candidate_urls_metadata():
+def get_candidate_urls_metadata(match_id):
     url_suffix = f'//fixtures/{match_id}/scoring'
     return [base_url + url_suffix for base_url in get_candidate_base_urls()]
 
 
-def get_available_match_id_list(match_id):
+def get_available_match_id_list():
     candidate_base_urls = get_candidate_base_urls()
-    url_suffix = f'/fixtures?matchStates=C'
+    url_suffix = f'/fixtures?matchStates=C&pageSize=300'
     
-    soup = try_urls(candidate_base_urls)
+    soup = try_urls([base_url + url_suffix for base_url in candidate_base_urls])
     
     if soup == -1:
         return soup
@@ -48,22 +48,21 @@ def get_available_match_id_list(match_id):
         page_size = soup['pageInfo']['pageSize']
         total_matches = soup['pageInfo']['numEntries']
 
-        def get_matchids_from_page(page_soup):
-            match_id_list = []
-            page_content = page_soup['content']
-            for i in page_content:
-                match_id_list.append(i['scheduleEntry']['matchId']['id'])
-            return match_id_list
-        
-        match_id_list = get_matchids_from_page(soup)
-        
-        for i in range(1, num_pages - 1):
-            soup = try_urls([base_url + f'/fixtures?matchStates=C&page={i}'])
-            if soup not in [-1, -2]:
-                break
-            else:
-                pass
-            match_id_list = match_id_list + get_matchids_from_page(soup)
+    def get_matchids_from_page(page_soup):
+        match_id_list = []
+        page_content = page_soup['content']
+        for i in page_content:
+            match_id_list.append(i['scheduleEntry']['matchId']['id'])
+        return match_id_list
+
+    match_id_list = get_matchids_from_page(soup)
+
+    for i in range(1, 10):#num_pages - 1):
+        soup = try_urls([base_url + url_suffix + f'&page={i}' for base_url in candidate_base_urls])
+        if soup not in [-1, -2]:
+            match_id_list = match_id_list + get_matchids_from_page(json.loads(soup))
+        else:
+            pass
     return match_id_list
 
 
@@ -118,6 +117,7 @@ def get_tracking_df_from_matchid(match_id):
             (df.line.nunique() == 1) &
             (df.line_at_stumps.nunique() == 1) &
                 (df.height_at_stumps.nunique() == 1))):
+            print('no data to fetch')
             return
         else:
             df['over'] = df.over.apply(lambda x: str(x).split('.'))
