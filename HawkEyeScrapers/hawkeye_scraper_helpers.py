@@ -57,7 +57,7 @@ def get_available_match_id_list():
 
     match_id_list = get_matchids_from_page(soup)
 
-    for i in range(1, 10):#num_pages - 1):
+    for i in range(1, num_pages - 1):
         soup = try_urls([base_url + url_suffix + f'&page={i}' for base_url in candidate_base_urls])
         if soup not in [-1, -2]:
             match_id_list = match_id_list + get_matchids_from_page(json.loads(soup))
