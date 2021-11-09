@@ -106,7 +106,7 @@ def get_tracking_df_from_matchid(match_id):
             columns=['over', 'ball_num', 'batter', 'non-striker',
                      'bowler', 'speed', 'catcher', 'dismissal_desc',
                      'total_extras', 'runs', 'bowler_extras', 'extra_type',
-                     'otw', 'length', 'line', 'line_at_stumps',
+                     'right_handed', 'length', 'line', 'line_at_stumps',
                      'height_at_stumps', 'shot_dist0', 'shot_dist1', 'blank2',
                      'blank3', 'blank4']
         )
