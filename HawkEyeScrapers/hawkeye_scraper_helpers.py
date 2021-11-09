@@ -138,6 +138,8 @@ def get_tracking_df_from_matchid(match_id):
             df['height_at_stumps'] = pd.to_numeric(
                 df['height_at_stumps'], errors='coerce')
             df['deviation'] = df.line_at_stumps - df.line
+            df['shot_dist0'] = (df['shot_dist0'] * 4.05) - 130.33  # based on vendor.js
+            df['shot_dist1'] = (df['shot_dist1'] * 3.45) - 163.64  # based on vendor.js
             return df
     except:
         print(
