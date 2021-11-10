@@ -8,7 +8,8 @@ headers = CaseInsensitiveDict()
 headers["Accept"] = "application/json"
 
 #retrieve first page, and find number of pages
-url = 'https://cricketapi-icc.pulselive.com/fixtures?pageSize=300&page=0'  
+page = 0 #first page to download
+url = 'https://cricketapi-icc.pulselive.com/fixtures?pageSize=300&page=%s' % page  
 print(url)
 fixturesJSON = requests.get(url, headers=headers)
 
