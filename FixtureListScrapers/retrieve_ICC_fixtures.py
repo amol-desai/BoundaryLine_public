@@ -19,7 +19,7 @@ with open('ICC-fixtures-%s' % page, 'w') as out_file:
 numPages = fixturesJSON.json()['pageInfo']['numPages']
 
 #retrieve rest of pages
-for page in range(1,numPages+1):
+for page in range(page+1,numPages+1):
     url = 'https://cricketapi-icc.pulselive.com/fixtures?pageSize=300&page=%s' % page
     print(url)
     fixturesJSON = requests.get(url, headers=headers)
