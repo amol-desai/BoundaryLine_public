@@ -14,11 +14,12 @@ import pandas as pd
 import numpy as np
 import json
 import re
-
+import base64
+import struct
 
 def get_candidate_base_urls():
     return [
-       'https://cricketapi-icc.pulselive.coms',
+       'https://cricketapi-icc.pulselive.com',
        'https://cricketapi.platform.bcci.tv',
        'https://cricketapi.platform.iplt20.com'
     ]
@@ -28,6 +29,9 @@ def get_candidate_urls_hawkeye(match_id):
     url_suffix = f'//fixtures/{match_id}/uds/stats'
     return [base_url + url_suffix for base_url in get_candidate_base_urls()]
 
+def get_candidate_urls_hawkeye_trajectories(match_id):
+    url_suffix = f'//fixtures/{match_id}/uds/traj'
+    return [base_url + url_suffix for base_url in get_candidate_base_urls()]
 
 def get_candidate_urls_metadata(match_id):
     url_suffix = f'//fixtures/{match_id}/scoring'
@@ -146,6 +150,58 @@ def get_tracking_df_from_matchid(match_id):
             f"couldn't retrieve data for match {match_id}. Please check {get_candidate_urls_hawkeye(match_id)} to debug")
         return
 
+def get_trajectories_df_from_matchid(match_id): #retrieves data from uds/traj
+    try:
+        df = pd.DataFrame(
+            [[k]+v.split(',') for i in json.loads(try_urls(get_candidate_urls_hawkeye_trajectories(match_id)))['data']
+                for k, v in i.items()],
+            columns=['over', 'ball_num', 'batter', 'non-striker',
+                        'bowler', 'speed', 'catcher', 'dismissal_desc',
+                        'total_extras', 'runs', 'extra_type', 'trajectoryString']
+        )
+        df['match_id'] = str(match_id)
+
+        if ((df.shape[0] == 0) |
+            ((df.speed.nunique() == 1) &
+            (df.trajectoryString.nunique() == 1))):
+            print('no data to fetch')
+            return
+        else:
+            df['over'] = df.over.apply(lambda x: str(x).split('.'))
+            df['match_inn'] = df.over.apply(lambda x: x[0])
+            df['over_ball'] = pd.to_numeric(
+                df.over.apply(lambda x: x[2]), errors='coerce')
+            df['over_num'] = pd.to_numeric(
+                df.over.apply(lambda x: x[1]), errors='coerce')
+            df.drop('over', axis=1, inplace=True)
+
+            df['speed'] = pd.to_numeric(df['speed'], errors='coerce')*3.6
+            df.loc[df.speed < 0, 'speed'] = np.nan
+
+            #decode the base64 trajectoryString
+            #Decode base64 using base64 package, split into 32-bit hexademical (4 byte) components, and then unpack the IEEE754 float using struct package
+            #As way of verification, bp.x and bp.y from uds/traj should match line and length data from uds/stats
+            #oba.y returns at 0 at the significance used in the below function
+            trajectoryElements = ['bp.x','bp.y','bt',
+            'a.x','a.y','a.z',
+            'ebv.x','ebv.y','ebv.z',
+            'obv.x','obv.y','obv.z',
+            'oba.x', 'oba.y', 'oba.z',
+            'bh'] #name of columns from vendors.js, listed in the order they are stored in the hex string
+            i = 0 
+            
+            for offset in sorted(set(range(0,64,4))): #for every 4 bytes in the decoded hex string
+                #create column for each trajectory element
+                df[trajectoryElements[i]] =  df.trajectoryString.apply( 
+                    lambda x: struct.unpack('>f', base64.b64decode(x)[offset:offset+4])[0] #>f specifies big-endian floating point
+                )
+                i += 1
+                
+            return df
+    except:
+        print(
+            f"couldn't retrieve data for match {match_id}. Please check {get_candidate_urls_hawkeye_trajectories(match_id)} to debug")
+        return
 
 def get_metadata_df_from_matchid(match_id):
     m = json.loads(try_urls(get_candidate_urls_metadata(match_id)))
