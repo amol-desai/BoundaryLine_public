@@ -1,7 +1,0 @@
-test_notebook.py
-.vscode/.ropeproject/config.py
-.vscode/.ropeproject/objectdb
-HawkEyeScrapers/__pycache__/hawkeye_scraper_helpers.cpython-38.pyc
-CricinfoScrapers/__pycache__/ball_by_ball_scraper.cpython-38.pyc
-CricinfoScrapers/__pycache__/helpers.cpython-38.pyc
-CricinfoScrapers/__pycache__/__init__.cpython-38.pyc
