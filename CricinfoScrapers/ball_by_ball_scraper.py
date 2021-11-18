@@ -20,7 +20,6 @@ def get_ball_by_ball_from_match_id(match_id, include_commentary=True):
 
     series_id = helpers.get_series_id_from_match_page(
         helpers.get_match_url_from_match_id(match_id))
-
     url_template = "http://site.web.api.espn.com/apis/site/v2/sports/cricket/{series_id}/playbyplay?event={match_id}&page={page_num}"
 
     soup = helpers.get_soup_from_url(url_template.format(
