@@ -38,12 +38,12 @@ def get_candidate_urls_metadata(match_id):
     return [base_url + url_suffix for base_url in get_candidate_base_urls()]
 
 
-def get_available_match_id_list():
+def get_available_match_id_list(starting_page_id=None):
     candidate_base_urls = get_candidate_base_urls()
-    url_suffix = f'/fixtures?matchStates=C&pageSize=300'
-    
+    url_suffix = f'/fixtures?pageSize=300'
+
     soup = try_urls([base_url + url_suffix for base_url in candidate_base_urls])
-    
+
     if soup == -1:
         return soup
     else:
@@ -59,15 +59,26 @@ def get_available_match_id_list():
             match_id_list.append(i['scheduleEntry']['matchId']['id'])
         return match_id_list
 
-    match_id_list = get_matchids_from_page(soup)
+    def get_match_ids_for_page_list(starting_page_id):
+        match_id_list = []
+        for i in range(starting_page_id, num_pages):
+            if i == num_pages - 1:
+                us = f'/fixtures?matchStates=C&pageSize=300'
+            else:
+                us = url_suffix
+            soup = try_urls([base_url + us + f'&page={i}' for base_url in candidate_base_urls])
+            if soup not in [-1, -2]:
+                match_id_list = match_id_list + get_matchids_from_page(json.loads(soup))
+            else:
+                pass
+        return match_id_list, i
 
-    for i in range(1, num_pages - 1):
-        soup = try_urls([base_url + url_suffix + f'&page={i}' for base_url in candidate_base_urls])
-        if soup not in [-1, -2]:
-            match_id_list = match_id_list + get_matchids_from_page(json.loads(soup))
-        else:
-            pass
-    return match_id_list
+    if starting_page_id is not None:
+        match_id_list, p = get_match_ids_for_page_list(starting_page_id)
+    else:
+        match_id_list, p = get_match_ids_for_page_list(0)
+
+    return match_id_list, p
 
 
 def try_urls(urls):
@@ -84,7 +95,7 @@ def try_urls(urls):
         print("Tried all URLs in vain")
         return -1
 
-        
+
 def get_soup_from_url(url):
     try:
         html = urlopen(url).read()
@@ -101,7 +112,7 @@ def get_soup_from_url(url):
         print("url is empty, no data available")
         return -2
 
-    
+
 def get_tracking_df_from_matchid(match_id):
     try:
         df = pd.DataFrame(
@@ -121,7 +132,7 @@ def get_tracking_df_from_matchid(match_id):
             (df.line.nunique() == 1) &
             (df.line_at_stumps.nunique() == 1) &
                 (df.height_at_stumps.nunique() == 1))):
-            print('no data to fetch')
+            print(f'no data to fetch for {match_id}')
             return
         else:
             df['over'] = df.over.apply(lambda x: str(x).split('.'))
@@ -142,8 +153,8 @@ def get_tracking_df_from_matchid(match_id):
             df['height_at_stumps'] = pd.to_numeric(
                 df['height_at_stumps'], errors='coerce')
             df['deviation'] = df.line_at_stumps - df.line
-            df['shot_dist0'] = (df['shot_dist0'] * 4.05) - 130.33  # based on vendor.js
-            df['shot_dist1'] = (df['shot_dist1'] * 3.45) - 163.64  # based on vendor.js
+            df['shot_dist0'] = (pd.to_numeric(df['shot_dist1'], errors='coerce') * 4.05) - 130.33  # based on vendor.js
+            df['shot_dist1'] = (pd.to_numeric(df['shot_dist0'], errors='coerce') * 3.45) - 163.64  # based on vendor.js
             return df
     except:
         print(
@@ -164,7 +175,7 @@ def get_trajectories_df_from_matchid(match_id): #retrieves data from uds/traj
         if ((df.shape[0] == 0) |
             ((df.speed.nunique() == 1) &
             (df.trajectoryString.nunique() == 1))):
-            print('no data to fetch')
+            print(f'no data to fetch for {match_id}')
             return
         else:
             df['over'] = df.over.apply(lambda x: str(x).split('.'))
@@ -188,15 +199,15 @@ def get_trajectories_df_from_matchid(match_id): #retrieves data from uds/traj
             'obv.x','obv.y','obv.z',
             'oba.x', 'oba.y', 'oba.z',
             'bh'] #name of columns from vendors.js, listed in the order they are stored in the hex string
-            i = 0 
-            
+            i = 0
+
             for offset in sorted(set(range(0,64,4))): #for every 4 bytes in the decoded hex string
                 #create column for each trajectory element
-                df[trajectoryElements[i]] =  df.trajectoryString.apply( 
+                df[trajectoryElements[i]] =  df.trajectoryString.apply(
                     lambda x: struct.unpack('>f', base64.b64decode(x)[offset:offset+4])[0] #>f specifies big-endian floating point
                 )
                 i += 1
-                
+
             return df
     except:
         print(
@@ -228,10 +239,13 @@ def get_metadata_df_from_matchid(match_id):
                            ]).drop_duplicates()
 
     venue_df.drop('coordinates', axis=1, inplace=True, errors='ignore')
-    player_df['batter_hand'] = player_df.rightHandedBat.apply(
-        lambda x: 'R' if x else 'L')
-    player_df['bowler_hand'] = player_df.rightArmedBowl.apply(
-        lambda x: 'R' if x else 'L')
+    try:
+        player_df['batter_hand'] = player_df.rightHandedBat.apply(
+            lambda x: 'R' if x else 'L')
+        player_df['bowler_hand'] = player_df.rightArmedBowl.apply(
+            lambda x: 'R' if x else 'L')
+    except:
+        pass
     match_df.matchType = match_df.apply(lambda x: 'W_' + x.matchType if
                                         re.search('women', x.tournamentLabel.lower()) else x.matchType,
                                         axis=1)
